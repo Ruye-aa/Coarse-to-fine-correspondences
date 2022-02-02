@@ -166,7 +166,7 @@ def extract_corresponding_trajectors(est_pairs,gt_pairs, gt_traj):
 
     return ext_traj
 
-def write_trajectory(traj,metadata, filename, dim=4):
+def write_trajectory(traj, metadata, filename, dim=4):
     """
     Writes the trajectory into a '.txt' file in 3DMatch/Redwood format. 
     Format specification can be found at http://redwood-data.org/indoor/fileformat.html
@@ -266,7 +266,7 @@ def evaluate_registration(num_fragment, result, result_pairs, gt_pairs, gt, gt_i
     precision = good * 1.0 / n_res
     recall = good * 1.0 / n_gt
 
-    return precision, recall, flags
+    return good, precision, recall, flags
 
 def benchmark(est_folder,gt_folder):
     scenes = sorted(os.listdir(gt_folder))
@@ -278,8 +278,8 @@ def benchmark(est_folder,gt_folder):
     n_valids= []
 
     short_names=['Kitchen','Home 1','Home 2','Hotel 1','Hotel 2','Hotel 3','Study','MIT Lab']
-    with open(f'{est_folder}/result','w') as f:
-        f.write(("Scene\t¦ prec.\t¦ rec.\t¦ re\t¦ te\t¦ samples\t¦\n"))
+    with open(f'{est_folder}/result','w',encoding='utf-8') as f:
+        f.write(("Scene\t¦ prec.\t¦ rec.\t¦ RE\t¦ TE\t¦ samples¦ inlier¦\n"))
 
         for idx,scene in enumerate(scene_names):
             # ground truth info
@@ -296,7 +296,7 @@ def benchmark(est_folder,gt_folder):
             est_pairs, est_traj = read_trajectory(os.path.join(est_folder,scenes[idx],'est.log'))
 
 
-            temp_precision, temp_recall,c_flag = evaluate_registration(n_fragments, est_traj, est_pairs, gt_pairs, gt_traj, gt_traj_cov)
+            temp_good, temp_precision, temp_recall, c_flag = evaluate_registration(n_fragments, est_traj, est_pairs, gt_pairs, gt_traj, gt_traj_cov)
             
             # Filter out the estimated rotation matrices
             ext_gt_traj = extract_corresponding_trajectors(est_pairs,gt_pairs, gt_traj)
@@ -323,7 +323,7 @@ def benchmark(est_folder,gt_folder):
             precision.append(temp_precision)
             recall.append(temp_recall)
 
-            f.write("{}\t¦ {:.3f}\t¦ {:.3f}\t¦ {:.3f}\t¦ {:.3f}\t¦ {:3d}¦\n".format(short_names[idx], temp_precision, temp_recall, np.median(re), np.median(te), n_valid))
+            f.write("{}\t¦ {:.3f}\t¦ {:.3f}\t¦ {:.3f}\t¦ {:.3f}\t¦ {:6d}\t¦{:3d}\t¦\n".format(short_names[idx], temp_precision, temp_recall, np.median(re), np.median(te), n_valid, temp_good))
             np.save(f'{est_folder}/{scenes[idx]}/flag.npy',c_flag)
         
         weighted_precision = (np.array(n_valids) * np.array(precision)).sum() / np.sum(n_valids)

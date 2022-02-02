@@ -28,7 +28,7 @@ def run_benchmark(feats_scores, n_points, exp_dir, benchmark, ransac_type='corre
     :param inlier_ratio_thres: threshold that decides inlier matching
     :return:
     '''
-    gt_folder = f'configs/benchmarks/{benchmark}'
+    gt_folder = f'E:/wenxian/code/Pytorch/Coarse-to-fine-correspondences/configs/benchmarks/{benchmark}'
 
     exp_dir = os.path.join(exp_dir, benchmark, str(n_points))
     if not os.path.exists(exp_dir):
@@ -103,13 +103,13 @@ def run_benchmark(feats_scores, n_points, exp_dir, benchmark, ransac_type='corre
     print("Inlier Ratio: {}".format(inlier_ratio.avg))
     ###################################################
     # write the estimated
-    write_est_trajectory(gt_folder, exp_dir, tsfm_est)
+    write_est_trajectory(gt_folder, exp_dir, tsfm_est)       # 写入est.txt
 
     ###################################################
     # evaluate the results, here only FMR now
     inlier_ratio_list = np.array(inlier_ratio_list)
-    benchmark_func(exp_dir, gt_folder)
-    split = get_scene_split(benchmark)
+    benchmark_func(exp_dir, gt_folder)            # result.txt
+    split = get_scene_split(benchmark)  # gt地址
     
     inliers = []
     fmrs = []
@@ -126,10 +126,10 @@ def run_benchmark(feats_scores, n_points, exp_dir, benchmark, ransac_type='corre
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--source_path', default=None, type=str, help='path to precomputed matching scores')
+    parser.add_argument('--source_path', default='E:/wenxian/code/Pytorch/Coarse-to-fine-correspondences/snapshot/tdmatch_enc_dec_f_test/3DMatch', type=str, help='path to precomputed matching scores')
     parser.add_argument('--benchmark', default='3DMatch', type=str, help='Either of [3DMatch, 3DLoMatch]')
-    parser.add_argument('--n_points', default=0, type=int, help='number of points used by RANSAC')
-    parser.add_argument('--exp_dir', default='est_traj', type=str, help='export final results')
+    parser.add_argument('--n_points', default=250, type=int, help='number of points used by RANSAC')
+    parser.add_argument('--exp_dir', default='E:/wenxian/code/Pytorch/Coarse-to-fine-correspondences/est_traj_f', type=str, help='export final results')
     args = parser.parse_args()
 
     feats_scores = sorted(glob.glob(f'{args.source_path}/*.pth'), key=natural_key)

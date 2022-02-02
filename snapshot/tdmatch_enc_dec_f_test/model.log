@@ -1,0 +1,176 @@
+RoughMatchingModel(
+  (encoder): KPEncoder(
+    (encoder_blocks): ModuleList(
+      (0): SimpleBlock(
+        (KPConv): KPConv(radius: 0.06, extent: 0.05, in_feat: 1, out_feat: 64)
+        (batch_norm): BatchNormBlock(in_feat: 64, momentum: 0.020, only_bias: False)
+        (leaky_relu): LeakyReLU(negative_slope=0.1)
+      )
+      (1): ResnetBottleneckBlock(
+        (unary1): UnaryBlock(in_feat: 64, out_feat: 32, BN: True, ReLU: True)
+        (KPConv): KPConv(radius: 0.06, extent: 0.05, in_feat: 32, out_feat: 32)
+        (batch_norm_conv): BatchNormBlock(in_feat: 32, momentum: 0.020, only_bias: False)
+        (unary2): UnaryBlock(in_feat: 32, out_feat: 128, BN: True, ReLU: False)
+        (unary_shortcut): UnaryBlock(in_feat: 64, out_feat: 128, BN: True, ReLU: False)
+        (leaky_relu): LeakyReLU(negative_slope=0.1)
+      )
+      (2): ResnetBottleneckBlock(
+        (unary1): UnaryBlock(in_feat: 128, out_feat: 32, BN: True, ReLU: True)
+        (KPConv): KPConv(radius: 0.06, extent: 0.05, in_feat: 32, out_feat: 32)
+        (batch_norm_conv): BatchNormBlock(in_feat: 32, momentum: 0.020, only_bias: False)
+        (unary2): UnaryBlock(in_feat: 32, out_feat: 128, BN: True, ReLU: False)
+        (unary_shortcut): Identity()
+        (leaky_relu): LeakyReLU(negative_slope=0.1)
+      )
+      (3): ResnetBottleneckBlock(
+        (unary1): UnaryBlock(in_feat: 128, out_feat: 64, BN: True, ReLU: True)
+        (KPConv): KPConv(radius: 0.12, extent: 0.10, in_feat: 64, out_feat: 64)
+        (batch_norm_conv): BatchNormBlock(in_feat: 64, momentum: 0.020, only_bias: False)
+        (unary2): UnaryBlock(in_feat: 64, out_feat: 256, BN: True, ReLU: False)
+        (unary_shortcut): UnaryBlock(in_feat: 128, out_feat: 256, BN: True, ReLU: False)
+        (leaky_relu): LeakyReLU(negative_slope=0.1)
+      )
+      (4): ResnetBottleneckBlock(
+        (unary1): UnaryBlock(in_feat: 256, out_feat: 64, BN: True, ReLU: True)
+        (KPConv): KPConv(radius: 0.12, extent: 0.10, in_feat: 64, out_feat: 64)
+        (batch_norm_conv): BatchNormBlock(in_feat: 64, momentum: 0.020, only_bias: False)
+        (unary2): UnaryBlock(in_feat: 64, out_feat: 256, BN: True, ReLU: False)
+        (unary_shortcut): Identity()
+        (leaky_relu): LeakyReLU(negative_slope=0.1)
+      )
+      (5): ResnetBottleneckBlock(
+        (unary1): UnaryBlock(in_feat: 256, out_feat: 128, BN: True, ReLU: True)
+        (KPConv): KPConv(radius: 0.25, extent: 0.20, in_feat: 128, out_feat: 128)
+        (batch_norm_conv): BatchNormBlock(in_feat: 128, momentum: 0.020, only_bias: False)
+        (unary2): UnaryBlock(in_feat: 128, out_feat: 512, BN: True, ReLU: False)
+        (unary_shortcut): UnaryBlock(in_feat: 256, out_feat: 512, BN: True, ReLU: False)
+        (leaky_relu): LeakyReLU(negative_slope=0.1)
+      )
+      (6): ResnetBottleneckBlock(
+        (unary1): UnaryBlock(in_feat: 512, out_feat: 128, BN: True, ReLU: True)
+        (KPConv): KPConv(radius: 0.25, extent: 0.20, in_feat: 128, out_feat: 128)
+        (batch_norm_conv): BatchNormBlock(in_feat: 128, momentum: 0.020, only_bias: False)
+        (unary2): UnaryBlock(in_feat: 128, out_feat: 512, BN: True, ReLU: False)
+        (unary_shortcut): Identity()
+        (leaky_relu): LeakyReLU(negative_slope=0.1)
+      )
+      (7): ResnetBottleneckBlock(
+        (unary1): UnaryBlock(in_feat: 512, out_feat: 256, BN: True, ReLU: True)
+        (KPConv): KPConv(radius: 0.50, extent: 0.40, in_feat: 256, out_feat: 256)
+        (batch_norm_conv): BatchNormBlock(in_feat: 256, momentum: 0.020, only_bias: False)
+        (unary2): UnaryBlock(in_feat: 256, out_feat: 1024, BN: True, ReLU: False)
+        (unary_shortcut): UnaryBlock(in_feat: 512, out_feat: 1024, BN: True, ReLU: False)
+        (leaky_relu): LeakyReLU(negative_slope=0.1)
+      )
+    )
+    (bottle): Conv1d(1024, 256, kernel_size=(1,), stride=(1,))
+  )
+  (decoder): KPDecoder(
+    (decoder_blocks): ModuleList(
+      (0): NearestUpsampleBlock(layer: 3 -> 2)
+      (1): UnaryBlock(in_feat: 768, out_feat: 128, BN: True, ReLU: True)
+      (2): NearestUpsampleBlock(layer: 2 -> 1)
+      (3): UnaryBlock(in_feat: 384, out_feat: 64, BN: True, ReLU: True)
+      (4): NearestUpsampleBlock(layer: 1 -> 0)
+      (5): LastUnaryBlock(in_feat: 192, out_feat: 32)
+    )
+  )
+  (sattn1): CrossAttention(
+    (attn): MultiHeadAttention(
+      (merge): Conv1d(256, 256, kernel_size=(1,), stride=(1,))
+      (proj): ModuleList(
+        (0): Conv1d(256, 256, kernel_size=(1,), stride=(1,))
+        (1): Conv1d(256, 256, kernel_size=(1,), stride=(1,))
+        (2): Conv1d(256, 256, kernel_size=(1,), stride=(1,))
+      )
+    )
+    (mlp): Sequential(
+      (0): Conv1d(512, 512, kernel_size=(1,), stride=(1,))
+      (1): InstanceNorm1d(512, eps=1e-05, momentum=0.1, affine=False, track_running_stats=False)
+      (2): ReLU()
+      (3): Conv1d(512, 256, kernel_size=(1,), stride=(1,))
+    )
+  )
+  (cattn): CrossAttention(
+    (attn): MultiHeadAttention(
+      (merge): Conv1d(256, 256, kernel_size=(1,), stride=(1,))
+      (proj): ModuleList(
+        (0): Conv1d(256, 256, kernel_size=(1,), stride=(1,))
+        (1): Conv1d(256, 256, kernel_size=(1,), stride=(1,))
+        (2): Conv1d(256, 256, kernel_size=(1,), stride=(1,))
+      )
+    )
+    (mlp): Sequential(
+      (0): Conv1d(512, 512, kernel_size=(1,), stride=(1,))
+      (1): InstanceNorm1d(512, eps=1e-05, momentum=0.1, affine=False, track_running_stats=False)
+      (2): ReLU()
+      (3): Conv1d(512, 256, kernel_size=(1,), stride=(1,))
+    )
+  )
+  (sattn2): CrossAttention(
+    (attn): MultiHeadAttention(
+      (merge): Conv1d(256, 256, kernel_size=(1,), stride=(1,))
+      (proj): ModuleList(
+        (0): Conv1d(256, 256, kernel_size=(1,), stride=(1,))
+        (1): Conv1d(256, 256, kernel_size=(1,), stride=(1,))
+        (2): Conv1d(256, 256, kernel_size=(1,), stride=(1,))
+      )
+    )
+    (mlp): Sequential(
+      (0): Conv1d(512, 512, kernel_size=(1,), stride=(1,))
+      (1): InstanceNorm1d(512, eps=1e-05, momentum=0.1, affine=False, track_running_stats=False)
+      (2): ReLU()
+      (3): Conv1d(512, 256, kernel_size=(1,), stride=(1,))
+    )
+  )
+  (final_proj): Conv1d(256, 256, kernel_size=(1,), stride=(1,))
+  (l_sattn1): CrossAttention(
+    (attn): MultiHeadAttention(
+      (merge): Conv1d(32, 32, kernel_size=(1,), stride=(1,))
+      (proj): ModuleList(
+        (0): Conv1d(32, 32, kernel_size=(1,), stride=(1,))
+        (1): Conv1d(32, 32, kernel_size=(1,), stride=(1,))
+        (2): Conv1d(32, 32, kernel_size=(1,), stride=(1,))
+      )
+    )
+    (mlp): Sequential(
+      (0): Conv1d(64, 64, kernel_size=(1,), stride=(1,))
+      (1): InstanceNorm1d(64, eps=1e-05, momentum=0.1, affine=False, track_running_stats=False)
+      (2): ReLU()
+      (3): Conv1d(64, 32, kernel_size=(1,), stride=(1,))
+    )
+  )
+  (l_cattn): CrossAttention(
+    (attn): MultiHeadAttention(
+      (merge): Conv1d(32, 32, kernel_size=(1,), stride=(1,))
+      (proj): ModuleList(
+        (0): Conv1d(32, 32, kernel_size=(1,), stride=(1,))
+        (1): Conv1d(32, 32, kernel_size=(1,), stride=(1,))
+        (2): Conv1d(32, 32, kernel_size=(1,), stride=(1,))
+      )
+    )
+    (mlp): Sequential(
+      (0): Conv1d(64, 64, kernel_size=(1,), stride=(1,))
+      (1): InstanceNorm1d(64, eps=1e-05, momentum=0.1, affine=False, track_running_stats=False)
+      (2): ReLU()
+      (3): Conv1d(64, 32, kernel_size=(1,), stride=(1,))
+    )
+  )
+  (l_sattn2): CrossAttention(
+    (attn): MultiHeadAttention(
+      (merge): Conv1d(32, 32, kernel_size=(1,), stride=(1,))
+      (proj): ModuleList(
+        (0): Conv1d(32, 32, kernel_size=(1,), stride=(1,))
+        (1): Conv1d(32, 32, kernel_size=(1,), stride=(1,))
+        (2): Conv1d(32, 32, kernel_size=(1,), stride=(1,))
+      )
+    )
+    (mlp): Sequential(
+      (0): Conv1d(64, 64, kernel_size=(1,), stride=(1,))
+      (1): InstanceNorm1d(64, eps=1e-05, momentum=0.1, affine=False, track_running_stats=False)
+      (2): ReLU()
+      (3): Conv1d(64, 32, kernel_size=(1,), stride=(1,))
+    )
+  )
+  (l_final_proj): Conv1d(32, 32, kernel_size=(1,), stride=(1,))
+)

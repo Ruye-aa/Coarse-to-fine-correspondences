@@ -144,7 +144,7 @@ def get_scene_split(benchmark):
     '''
 
     assert benchmark in ['3DMatch', '3DLoMatch']
-    folder = f'configs/benchmarks/{benchmark}/*/gt.log'
+    folder = f'E:/wenxian/code/Pytorch/Coarse-to-fine-correspondences/configs/benchmarks/{benchmark}/*/gt.log'
 
     scene_files = sorted(glob.glob(folder))
     split = []
