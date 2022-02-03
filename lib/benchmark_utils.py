@@ -59,8 +59,6 @@ def to_o3d_feats(embedding):
     return feats
 
 
-
-
 def mutual_selection(score_mat):
     """
     Return a {0,1} matrix, the element is 1 if and only if it's maximum along both row and column
@@ -155,7 +153,7 @@ def get_scene_split(benchmark):
         count += len(gt_pairs)
     return split
 
-
+# ******************************
 def get_inlier_ratio(src_node, tgt_node, rot, trans, inlier_distance_threshold=0.1):
     '''
     Compute inlier ratios based on input torch tensors
@@ -163,8 +161,9 @@ def get_inlier_ratio(src_node, tgt_node, rot, trans, inlier_distance_threshold=0
     src_node = (torch.matmul(rot, src_node.T) + trans).T
     dist = torch.norm(src_node - tgt_node, dim=-1)
     inliers = dist < inlier_distance_threshold
+    a, b = torch.sort(inliers, descending=True)  # a为排序后数据，b为索引
     inliers_num = torch.sum(inliers)
-    return inliers_num / src_node.shape[0]
+    return inliers_num / src_node.shape[0], b, inliers_num
 
 
 def to_tsfm(rot, trans):

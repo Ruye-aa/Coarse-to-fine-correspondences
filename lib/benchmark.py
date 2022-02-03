@@ -172,7 +172,7 @@ def write_trajectory(traj, metadata, filename, dim=4):
     Format specification can be found at http://redwood-data.org/indoor/fileformat.html
 
     Args:
-    traj (numpy array): trajectory for n pairs[n,dim, dim] 
+    traj (numpy array): trajectory for n pairs[n, dim, dim]
     metadata (numpy array): file containing metadata about fragment numbers [n,3]
     filename (str): path where to save the '.txt' file containing trajectory data
     dim (int): dimension of the transformation matrix (4x4 for 3D data)
@@ -307,15 +307,22 @@ def benchmark(est_folder,gt_folder):
 
             re_per_scene['mean'].append(np.mean(re))
             re_per_scene['median'].append(np.median(re))
-            re_per_scene['min'].append(np.min(re))
-            re_per_scene['max'].append(np.max(re))
-            
+            try:
+                re_per_scene['min'].append(np.min(re))
+                re_per_scene['max'].append(np.max(re))
+            except:
+                re_per_scene['min'].append(np.min(0))
+                re_per_scene['max'].append(np.max(1000))
+
 
             te_per_scene['mean'].append(np.mean(te))
             te_per_scene['median'].append(np.median(te))
-            te_per_scene['min'].append(np.min(te))
-            te_per_scene['max'].append(np.max(te))
-
+            try:
+                te_per_scene['min'].append(np.min(te))
+                te_per_scene['max'].append(np.max(te))
+            except:
+                te_per_scene['min'].append(np.min(0))
+                te_per_scene['max'].append(np.max(100))
 
             re_all.extend(re.reshape(-1).tolist())
             te_all.extend(te.reshape(-1).tolist())
@@ -323,7 +330,7 @@ def benchmark(est_folder,gt_folder):
             precision.append(temp_precision)
             recall.append(temp_recall)
 
-            f.write("{}\t¦ {:.3f}\t¦ {:.3f}\t¦ {:.3f}\t¦ {:.3f}\t¦ {:6d}\t¦{:3d}\t¦\n".format(short_names[idx], temp_precision, temp_recall, np.median(re), np.median(te), n_valid, temp_good))
+            f.write("{}\t¦ {:.3f}\t¦ {:.3f}\t¦ {:.3f}\t¦ {:.3f}\t¦ {:5d}\t¦{:3d}\t¦\n".format(short_names[idx], temp_precision, temp_recall, np.median(re), np.median(te), n_valid, temp_good))
             np.save(f'{est_folder}/{scenes[idx]}/flag.npy',c_flag)
         
         weighted_precision = (np.array(n_valids) * np.array(precision)).sum() / np.sum(n_valids)
