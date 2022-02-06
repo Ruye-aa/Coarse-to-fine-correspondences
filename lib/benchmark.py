@@ -330,7 +330,7 @@ def benchmark(est_folder,gt_folder):
             precision.append(temp_precision)
             recall.append(temp_recall)
 
-            f.write("{}\t¦ {:.3f}\t¦ {:.3f}\t¦ {:.3f}\t¦ {:.3f}\t¦ {:5d}\t¦{:3d}\t¦\n".format(short_names[idx], temp_precision, temp_recall, np.median(re), np.median(te), n_valid, temp_good))
+            f.write("{}\t¦ {:.3f}\t¦ {:.3f}\t¦ {:.3f}\t¦ {:.3f}\t¦ {:5d} \t¦{:3d}\t¦\n".format(short_names[idx], temp_precision, temp_recall, np.median(re), np.median(te), n_valid, temp_good))
             np.save(f'{est_folder}/{scenes[idx]}/flag.npy',c_flag)
         
         weighted_precision = (np.array(n_valids) * np.array(precision)).sum() / np.sum(n_valids)

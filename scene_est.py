@@ -186,10 +186,25 @@ for eachfile in os.listdir(gt_folder):
     recall_worst, recall_worst_idx = torch.topk(torch.from_numpy(np.array(recall)), 10, largest=True)
     inlier_best, inlier_best_idx = torch.topk(torch.from_numpy(np.array(inlier_ratio[(x-gt_pairs.shape[0]):x])),10, largest=True)
     inlier_worst, inlier_worst_idx = torch.topk(torch.from_numpy(np.array(np.array(inlier_ratio[x-gt_pairs.shape[0]:x]))), 10, largest=False)
-    write_trajectory(np.array(recall_best_idx), est_traj, gt_pairs, os.path.join(est_folder,eachfile, 'best_recall.log'))
-    write_trajectory(np.array(recall_worst_idx), est_traj, gt_pairs, os.path.join(est_folder, eachfile, 'worst_recall.log'))
-    write_trajectory(np.array(inlier_best_idx), est_traj, gt_pairs, os.path.join(est_folder, eachfile, 'best_inlier.log'))
-    write_trajectory(np.array(inlier_worst_idx), est_traj, gt_pairs, os.path.join(est_folder, eachfile, 'worst_inlier.log'))
+    # 保存最好/差的10个数据的索引
+    filename = f'{est_folder}/{eachfile}/best.log'
+    with open(filename, 'w') as f:
+        for idx in range(recall_best_idx.shape[0]):
+            f.write(f'{recall_best_idx[idx].numpy().tolist()}\n')
+        for idx in range(inlier_best_idx.shape[0]):
+            f.write(f'{inlier_best_idx[idx].numpy().tolist()}\n')
+
+    filename = f'{est_folder}/{eachfile}/worst.log'
+    with open(filename, 'w') as f:
+        for idx in range(recall_worst_idx.shape[0]):
+            f.write(f'{recall_worst_idx[idx].numpy().tolist()}\n')
+        for idx in range(inlier_worst_idx.shape[0]):
+            f.write(f'{inlier_best_idx[idx].numpy().tolist()}\n')
+
+    # write_trajectory(np.array(recall_best_idx), est_traj, gt_pairs, os.path.join(est_folder,eachfile, 'best_recall.log'))
+    # write_trajectory(np.array(recall_worst_idx), est_traj, gt_pairs, os.path.join(est_folder, eachfile, 'worst_recall.log'))
+    # write_trajectory(np.array(inlier_best_idx), est_traj, gt_pairs, os.path.join(est_folder, eachfile, 'best_inlier.log'))
+    # write_trajectory(np.array(inlier_worst_idx), est_traj, gt_pairs, os.path.join(est_folder, eachfile, 'worst_inlier.log'))
 
     # 保存每帧的结果recall,RE/TE,inlier_ratio
 
@@ -211,9 +226,9 @@ for eachfile in os.listdir(gt_folder):
             recall_good += 1
         elif recall[i]>2:
             recall_bad += 1
-        if inlier_ratio[x-i] > 0.4:   # 100
+        if inlier_ratio[x-i-1] > 0.4:   # 100
             inliear_good += 1
-        elif inlier_ratio[x-i] < 0.08:   # 20
+        elif inlier_ratio[x-i-1] < 0.08:   # 20
             inliear_bad += 1
     print(f'recall_good_ratio: {recall_good/gt_pairs.shape[0]:.3f}')
     print(f'recall_bad_ratio: {recall_bad/gt_pairs.shape[0]:.3f}')

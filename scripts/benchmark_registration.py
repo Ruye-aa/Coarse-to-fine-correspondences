@@ -54,7 +54,7 @@ def run_benchmark(feats_scores, n_points, exp_dir, benchmark, ransac_type='corre
         #########################################
         # 1. take input point clouds
         data = torch.load(eachfile)
-        x += 1
+
         src_pcd, tgt_pcd = data['src_pcd'], data['tgt_pcd']
         src_candidate_id, tgt_candidate_id = data['src_candidate_id'], data['tgt_candidate_id']
         correspondences = data['correspondences']
@@ -98,7 +98,7 @@ def run_benchmark(feats_scores, n_points, exp_dir, benchmark, ransac_type='corre
         inlier_ratio.update(cur_inlier_ratio, 1)
         inlier_ratio_list.append(cur_inlier_ratio)
 
-        # 保存inliers，corr索引，inliers索引，outlier索引 以及内点数
+        # 保存inliers的corr索引：src索引，tgt索引 以及内点数
         filename = f'{inliers_eva}/{x}.txt'
         with open(filename, 'w') as f:
             for idx in range(correspondences.shape[0]):
@@ -110,6 +110,7 @@ def run_benchmark(feats_scores, n_points, exp_dir, benchmark, ransac_type='corre
             f.write(f'Corr_num: {correspondences.shape[0]:4d} ')
             f.write(f'inlier_num: {inlier_num.item():4d} ')
             f.write(f'inlier_ratio: {cur_inlier_ratio.item():.4f} \n')
+            x += 1
 
     tsfm_est = np.array(tsfm_est)
     #print("Minimum number of Correspondences: {}".format(num_corr_min))
