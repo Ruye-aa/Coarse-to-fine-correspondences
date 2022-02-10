@@ -30,7 +30,7 @@ def run_benchmark(feats_scores, n_points, exp_dir, benchmark, ransac_type='corre
     '''
     gt_folder = f'E:/wenxian/code/Pytorch/Coarse-to-fine-correspondences/configs/benchmarks/{benchmark}'
 
-    exp_dir = os.path.join(exp_dir, benchmark, str(n_points))
+    exp_dir = os.path.join(exp_dir, benchmark, 'coarse')  # str(n_points)
     if not os.path.exists(exp_dir):
         os.makedirs(exp_dir)
 
@@ -64,7 +64,7 @@ def run_benchmark(feats_scores, n_points, exp_dir, benchmark, ransac_type='corre
         correspondences_raw_tgt = tgt_candidate_id[correspondences[:, 1]].unsqueeze(-1)
         correspondences = torch.cat([correspondences_raw_src, correspondences_raw_tgt], dim=-1)
 
-        rot, trans = data['rot'], data['trans']
+        rot, trans = data['rot'], data['trans']   # gt
         #########################################
         # 2. do sampling guided by score
         if correspondences.shape[0] == 0:
@@ -102,7 +102,7 @@ def run_benchmark(feats_scores, n_points, exp_dir, benchmark, ransac_type='corre
         filename = f'{inliers_eva}/{x}.txt'
         with open(filename, 'w') as f:
             for idx in range(correspondences.shape[0]):
-                f.write('\t'.join(map(str,correspondences[idx].numpy().tolist())) +'\t')
+                f.write('\t'.join(map(str, correspondences[idx].numpy().tolist())) +'\t')
                 f.write(str(inlier_idx[idx].item()) + '\n')
 
         filename = f'{exp_dir}/inliers_num.txt'
@@ -139,12 +139,12 @@ def run_benchmark(feats_scores, n_points, exp_dir, benchmark, ransac_type='corre
         f.write(f'Inlier ratio: {np.mean(inliers):.3f} : +- {np.std(inliers):.3f}\n')
         f.write(f'Feature match recall: {np.mean(fmrs):.3f} : +- {np.std(fmrs):.3f}\n')
 
-    print('run over')
+    print('run finished')
     f.close()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--source_path', default='E:/wenxian/code/Pytorch/Coarse-to-fine-correspondences/snapshot/tdmatch_enc_dec_test/best_loss', type=str, help='path to precomputed matching scores')
+    parser.add_argument('--source_path', default='E:/wenxian/code/Pytorch/Coarse-to-fine-correspondences/snapshot/tdmatch_enc_dec_test/coarse', type=str, help='path to precomputed matching scores')
     parser.add_argument('--benchmark', default='3DLoMatch', type=str, help='Either of [3DMatch, 3DLoMatch]')
     parser.add_argument('--n_points', default=250, type=int, help='number of points used by RANSAC')
     parser.add_argument('--exp_dir', default='E:/wenxian/code/Pytorch/Coarse-to-fine-correspondences/est_traj', type=str, help='export final results')

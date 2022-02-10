@@ -295,7 +295,6 @@ def benchmark(est_folder,gt_folder):
             # estimated info
             est_pairs, est_traj = read_trajectory(os.path.join(est_folder,scenes[idx],'est.log'))
 
-
             temp_good, temp_precision, temp_recall, c_flag = evaluate_registration(n_fragments, est_traj, est_pairs, gt_pairs, gt_traj, gt_traj_cov)
             
             # Filter out the estimated rotation matrices

@@ -198,7 +198,6 @@ class Trainer(object):
 
     def inference_one_epoch(self, epoch, phase):
         '''
-
         :param epoch:
         :param phase:
         :return:

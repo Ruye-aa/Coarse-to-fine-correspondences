@@ -20,18 +20,6 @@ def trans(node, traj):
     node = (torch.matmul(rot, node.T) + trans).T
     return node
 
-def get_inlier_num(src_node, tgt_node, traj, inlier_distance_threshold=0.1):
-    '''
-    Compute inlier ratios based on input torch tensors
-    '''
-    rot = traj[:3, :3]
-    trans = traj[:3, 2:3]
-    src_node = (torch.matmul(rot, src_node.T) + trans).T
-    dist = torch.norm(src_node - tgt_node, dim=-1)
-    inliers = dist < inlier_distance_threshold
-    inliers_num = torch.sum(inliers)
-    return inliers_num
-
 def read_trajectory(filename, dim=4):
     with open(filename) as f:
         lines = f.readlines()
@@ -70,9 +58,9 @@ def extract_corresponding_trajectors(est_pairs, gt_pairs, gt_traj):
 
 benchmark = '3DLoMatch'
 npoint = 250     # ----------------------
-data_folder = f'scripts/data/indoor/test'
-gt_folder = f'configs/benchmarks/{benchmark}'
-est_folder = f'est_traj/{benchmark}/{npoint}'
+data_folder = f'E:/wenxian/code/Pytorch/Coarse-to-fine-correspondences/scripts/data/indoor/test'
+gt_folder = f'E:/wenxian/code/Pytorch/Coarse-to-fine-correspondences/configs/benchmarks/{benchmark}'
+est_folder = f'E:/wenxian/code/Pytorch/Coarse-to-fine-correspondences/est_traj/{benchmark}/{npoint}'    # ***************
 inliers_eva = f'{est_folder}/inliers_eva'
 x = 0
 
@@ -96,56 +84,72 @@ for each_scene in os.listdir(data_folder):
     with open(f'{est_folder}/{each_scene}/best.log') as f:
         for eachline in f:
             tmp = eachline.split()
-            best_idx.append(int(tmp[0]))     # str
+            best_idx.append(int(tmp[0]))   # str
     with open(f'{est_folder}/{each_scene}/worst.log') as f:
         for eachline in f:
             tmp = eachline.split()
             worst_idx.append(int(tmp[0]))
-    for i in best_idx:
-        src_idx = gt_pairs[i][0]
-        tgt_idx = gt_pairs[i][1]
+    for i in worst_idx:
+        tgt_idx = gt_pairs[i][0]
+        src_idx = gt_pairs[i][1]
         # 从gt和est中获取对应帧的转换矩阵
         gt_traj_ext = extract_corresponding_trajectors(est_pairs, gt_pairs, gt_traj)[i]
         est_traj_ext = extract_corresponding_trajectors(est_pairs, gt_pairs, est_traj)[i]
-        # src和tgt数据
-        src_path = f"{data_folder}/{each_scene}/cloud_bin_{src_idx}.pth"
+        # tgt和src数据
         tgt_path = f"{data_folder}/{each_scene}/cloud_bin_{tgt_idx}.pth"
-        tgt_pcd = torch.load(tgt_path)   # 转换为o3d格式
-        src_pcd = torch.load(src_path)
-        # src和tgt关键点
-        tgt_keys_idx = []
-        src_keys_idx = []
+        src_path = f"{data_folder}/{each_scene}/cloud_bin_{src_idx}.pth"
+        src_pcd = torch.load(src_path)   # 转换为o3d格式
+        tgt_pcd = torch.load(tgt_path)
 
+        # 输出每帧评价结果
+        print(f"{tgt_idx}\t{src_idx}")
+        print(f"inlier_num: {inlier_num[i]}/{npoint}")
+
+        # tgt和src关键点
+        src_keys_idx = []
+        tgt_keys_idx = []
+        in_keys_idx = []
         with open(f'{inliers_eva}/{x+i}.txt') as f:  # keys_path = f'{inliers_eva}/{i}.txt'
             for eachline in f:
                 tmp = eachline.split()
-                tgt_keys_idx.append(int(tmp[0]))
-                src_keys_idx.append(int(tmp[1]))
-        tgt_keys_idx = torch.from_numpy(np.array(tgt_keys_idx))
+                src_keys_idx.append(int(tmp[0]))
+                tgt_keys_idx.append(int(tmp[1]))
+                in_keys_idx.append(int(tmp[2]))
         src_keys_idx = torch.from_numpy(np.array(src_keys_idx))
-        tgt_keys = tgt_pcd[tgt_keys_idx, :]
+        tgt_keys_idx = torch.from_numpy(np.array(tgt_keys_idx))
         src_keys = src_pcd[src_keys_idx, :]
-        # inliers_num = get_inlier_num(torch.from_numpy(src_keys), torch.from_numpy(tgt_keys), torch.from_numpy(est_traj_ext))
-        tgt_keys = to_o3d_pcd(tgt_keys)
+        tgt_keys = tgt_pcd[tgt_keys_idx, :]
+        # inliers_num = get_inlier_num(torch.from_numpy(tgt_keys), torch.from_numpy(src_keys), torch.from_numpy(est_traj_ext))
         src_keys = to_o3d_pcd(src_keys)
-        # tgt关键点和所有点的转换
-        tgt_pcd = to_o3d_pcd(tgt_pcd)
+        tgt_keys = to_o3d_pcd(tgt_keys)
+        # src关键点和所有点的转换
         src_pcd = to_o3d_pcd(src_pcd)
-        tgt_pcd.paint_uniform_color([0, 0.651, 0.929])
-        src_pcd.paint_uniform_color([1, 0.706, 0])
-        tgt_pcd_est = copy.deepcopy(tgt_pcd).transform(est_traj_ext)
-        tgt_pcd_gt = copy.deepcopy(tgt_pcd).transform(gt_traj_ext)
-        tgt_pcd_est_trans = copy.deepcopy(tgt_pcd_est).translate((0, 4, 0))
-        tgt_keys_est = copy.deepcopy(tgt_keys).transform(est_traj_ext)
-        tgt_keys_est_trans = copy.deepcopy(tgt_keys_est).translate((0, 4, 0))
+        tgt_pcd = to_o3d_pcd(tgt_pcd)
+        src_pcd.paint_uniform_color([0, 0.651, 0.929])
+        tgt_pcd.paint_uniform_color([1, 0.706, 0])
+        src_pcd_est = copy.deepcopy(src_pcd).transform(est_traj_ext)
+        src_pcd_gt = copy.deepcopy(src_pcd).transform(gt_traj_ext)
+        src_pcd_est_trans = copy.deepcopy(src_pcd_est).translate((0, 4, 0))
+        src_keys_gt = copy.deepcopy(src_keys).transform(gt_traj_ext)
+        src_keys_est = copy.deepcopy(src_keys).transform(est_traj_ext)
+        src_keys_est.paint_uniform_color([0, 0, 1])
+        src_keys_est_trans = copy.deepcopy(src_keys_est).translate((0, 4, 0))
         # 关键点合并以及之间的连线
-        keys = src_keys + tgt_keys_est_trans
+        keys = tgt_keys + src_keys_est_trans
         keys.paint_uniform_color([1, 0, 0])
         corr_keys = np.asarray(keys.points)
+        gt_keys = tgt_keys + src_keys_gt
+        corr_gt_keys = np.asarray(gt_keys.points)
+
+
         in_colors = [[0, 1, 0] for j in range(inlier_num[i])]
         out_colors = [[1, 0, 0] for j in range(npoint-inlier_num[i])]
-        in_lines = [[j, j+npoint] for j in range(inlier_num[i])]
-        out_lines = [[inlier_num[i]+j, inlier_num[i]+j+npoint] for j in range(npoint-inlier_num[i])]
+
+
+
+        in_lines = [[j, j+npoint] for j in in_keys_idx[:inlier_num[i]]]
+        out_lines = [[j, j+npoint] for j in in_keys_idx[inlier_num[i]:]]
+
         in_line_set = o3d.geometry.LineSet(
             points=o3d.utility.Vector3dVector(corr_keys),
             lines=o3d.utility.Vector2iVector(in_lines),
@@ -154,29 +158,55 @@ for each_scene in os.listdir(data_folder):
             points=o3d.utility.Vector3dVector(corr_keys),
             lines=o3d.utility.Vector2iVector(out_lines),
         )
+        gt_in_line_set = o3d.geometry.LineSet(
+            points=o3d.utility.Vector3dVector(corr_gt_keys),
+            lines=o3d.utility.Vector2iVector(in_lines),
+        )
+        gt_out_line_set = o3d.geometry.LineSet(
+            points=o3d.utility.Vector3dVector(corr_gt_keys),
+            lines=o3d.utility.Vector2iVector(out_lines),
+        )
         in_line_set.colors = o3d.utility.Vector3dVector(in_colors)
         out_line_set.colors = o3d.utility.Vector3dVector(out_colors)
+        gt_in_line_set.colors = o3d.utility.Vector3dVector(in_colors)
+        gt_out_line_set.colors = o3d.utility.Vector3dVector(out_colors)
+
         o3d.visualization.draw([{
-            "name": "src",
-            "geometry": src_pcd
+            "name": "tgt",
+            "geometry": tgt_pcd
         }, {
-            "name": "tgt_gt",
-            "geometry": tgt_pcd_gt
+        #     "name": "src",
+        #     "geometry": src_pcd
+        # }, {
+            "name": "src_gt",
+            "geometry": src_pcd_gt
         }, {
-            "name": "tgt_est",
-            "geometry": tgt_pcd_est
+            "name": "src_est",
+            "geometry": src_pcd_est
         }, {
-            "name": "tgt_est_trans",
-            "geometry": tgt_pcd_est_trans
+        #     "name": "src_est_trans",
+        #     "geometry": src_pcd_est_trans
+        # }, {
+            "name": "keys",            # 红点
+            "geometry": keys
         }, {
-            "name": "inlier",
+            "name": "src_keys_gt",     # 黑点
+            "geometry": src_keys_gt
+        }, {
+            "name": "src_keys_est",    # 蓝点
+            "geometry": src_keys_est
+        }, {
+            "name": "gt_in_line",         # 绿线
+            "geometry": gt_in_line_set
+        },{
+            "name": "gt_out_line",         # 红线
+            "geometry": gt_out_line_set
+        },{
+            "name": "inlier_line",          # 绿线
             "geometry": in_line_set
         }, {
-            "name": "outlier",
+            "name": "outlier_line",         # 红线
             "geometry": out_line_set
-        }, {
-            "name": "keys",
-            "geometry": keys
         }
         ], show_ui=True)
     x += gt_pairs.shape[0]

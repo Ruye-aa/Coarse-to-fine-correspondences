@@ -109,8 +109,10 @@ def extract_corresponding_trajectors(est_pairs, gt_pairs, gt_traj):
     return ext_traj
 
 
-def evaluate_registration_recall(num_fragment, result, result_pairs, gt_pairs, gt, gt_info):
+def evaluate_registration_recall(num_fragment, result, result_pairs, gt_pairs, gt, gt_info, err2=0.2):
+    err2 = err2 ** 2
     gt_mask = np.zeros((num_fragment, num_fragment), dtype=int)
+    rmse = []
     recall = []
 
     for idx in range(gt_pairs.shape[0]):
@@ -118,38 +120,48 @@ def evaluate_registration_recall(num_fragment, result, result_pairs, gt_pairs, g
         j = int(gt_pairs[idx, 1])
 
         # Only non consecutive pairs are tested
-        # if j - i > 1:
+        # if j - i > 1:  # 对3DMatch有区别
         gt_mask[i, j] = idx+1
 
-    n_res = 0
+    good = 0
     for idx in range(result_pairs.shape[0]):
         i = int(result_pairs[idx, 0])
         j = int(result_pairs[idx, 1])
         pose = result[idx, :, :]
+        n_res = 0
+        n_rmse = 0
 
         if gt_mask[i, j] > 0:
             n_res += 1
             gt_idx = gt_mask[i, j]
             p = computeTransformationErr(np.linalg.inv(gt[gt_idx-1, :, :]) @ pose, gt_info[gt_idx-1, :, :])
-            recall.append(p)
+            n_rmse += p
+            if p <= err2:               # 场景内每一帧的RMSE
+                good += 1
+        rmse.append(n_rmse)
+    if n_res == 0:
+        n_res += 1e6
+    recall.append(good * 1.0 / n_res)   # 场景内有多少帧满足/场景内帧数
 
-    return recall
+    return rmse, recall
 
 npoint = 250
 benchmark = '3DLoMatch'
 gt_folder = f'configs/benchmarks/{benchmark}'
-est_folder = f'est_traj/{benchmark}/{npoint}'
+est_folder = f'est_traj/{benchmark}/coarse'  #*************
 x = 0
 
 # 提取内点率数据
 inliers_folder = f'{est_folder}/inliers_num.txt'
-inliers_num = []
+inlier_num = []
 inlier_ratio = []
 with open(inliers_folder) as f:
     for eachline in f:
         tmp = eachline.split()
         inlier_ratio.append(tmp[5])
+        inlier_num.append((tmp[3]))
 inlier_ratio = list(map(float, inlier_ratio))
+inlier_num = list(map(int, inlier_num))
 
 with open(inliers_folder) as f:
     inliers = f.readlines()
@@ -174,32 +186,39 @@ for eachfile in os.listdir(gt_folder):
     re = rotation_error(torch.from_numpy(ext_gt_traj[:, 0:3, 0:3]), torch.from_numpy(est_traj[:, 0:3, 0:3])).cpu().numpy()
     te = translation_error(torch.from_numpy(ext_gt_traj[:, 0:3, 3:4]),torch.from_numpy(est_traj[:, 0:3, 3:4])).cpu().numpy()
 
-    # 计算场景中每帧的recall
-    recall = evaluate_registration_recall(n_fragments, est_traj, est_pairs, gt_pairs, gt_traj, gt_traj_cov)
+    # 计算场景中每帧的rmse
+    rmse, recall = evaluate_registration_recall(n_fragments, est_traj, est_pairs, gt_pairs, gt_traj, gt_traj_cov)
 
     # 提取每个场景真实重复率
     # with open(gt_overlap) as f:
     #     lines = f.readlines()
 
     # 找到最好/差的10帧
-    recall_best, recall_best_idx = torch.topk(torch.from_numpy(np.array(recall)),10, largest=False)
-    recall_worst, recall_worst_idx = torch.topk(torch.from_numpy(np.array(recall)), 10, largest=True)
-    inlier_best, inlier_best_idx = torch.topk(torch.from_numpy(np.array(inlier_ratio[(x-gt_pairs.shape[0]):x])),10, largest=True)
-    inlier_worst, inlier_worst_idx = torch.topk(torch.from_numpy(np.array(np.array(inlier_ratio[x-gt_pairs.shape[0]:x]))), 10, largest=False)
-    # 保存最好/差的10个数据的索引
+    rmse_best, rmse_best_idx = torch.topk(torch.from_numpy(np.array(rmse)), 10, largest=False)
+    rmse_worst, rmse_worst_idx = torch.topk(torch.from_numpy(np.array(rmse)), 10, largest=True)
+    # recall_best, recall_best_idx = torch.topk(torch.from_numpy(np.array(recall)),10, largest=False)
+    # recall_worst, recall_worst_idx = torch.topk(torch.from_numpy(np.array(recall)), 10, largest=True)
+    inlier_best, inlier_best_idx = torch.topk(torch.from_numpy(np.array(inlier_num[(x-gt_pairs.shape[0]):x])),10, largest=True)
+    inlier_worst, inlier_worst_idx = torch.topk(torch.from_numpy(np.array(np.array(inlier_num[x-gt_pairs.shape[0]:x]))), 10, largest=False)
+    # 保存最好/差的10个数据的索引-------------------------
     filename = f'{est_folder}/{eachfile}/best.log'
     with open(filename, 'w') as f:
-        for idx in range(recall_best_idx.shape[0]):
-            f.write(f'{recall_best_idx[idx].numpy().tolist()}\n')
+        for idx in range(rmse_best_idx.shape[0]):
+            f.write(f'{rmse_best_idx[idx].numpy().tolist()}\t{rmse_best[idx].numpy().tolist()}\n')
+        # for idx in range(recall_best_idx.shape[0]):
+        #     f.write(f'{recall_best_idx[idx].numpy().tolist()}\t{recall_best[idx].numpy().tolist()}\n')
         for idx in range(inlier_best_idx.shape[0]):
-            f.write(f'{inlier_best_idx[idx].numpy().tolist()}\n')
+            f.write(f'{inlier_best_idx[idx].numpy().tolist()}\t{inlier_best[idx].numpy().tolist()}\n')
 
     filename = f'{est_folder}/{eachfile}/worst.log'
     with open(filename, 'w') as f:
-        for idx in range(recall_worst_idx.shape[0]):
-            f.write(f'{recall_worst_idx[idx].numpy().tolist()}\n')
+        for idx in range(rmse_worst_idx.shape[0]):
+            f.write(f'{rmse_worst_idx[idx].numpy().tolist()}\t{rmse_worst[idx].numpy().tolist()}\n')
+        # for idx in range(recall_worst_idx.shape[0]):
+        #     f.write(f'{recall_worst_idx[idx].numpy().tolist()}\t{recall_worst[idx].numpy().tolist()}\n')
         for idx in range(inlier_worst_idx.shape[0]):
-            f.write(f'{inlier_best_idx[idx].numpy().tolist()}\n')
+            f.write(f'{inlier_worst_idx[idx].numpy().tolist()}\t{inlier_worst[idx].numpy().tolist()}\n')
+
 
     # write_trajectory(np.array(recall_best_idx), est_traj, gt_pairs, os.path.join(est_folder,eachfile, 'best_recall.log'))
     # write_trajectory(np.array(recall_worst_idx), est_traj, gt_pairs, os.path.join(est_folder, eachfile, 'worst_recall.log'))
@@ -211,27 +230,27 @@ for eachfile in os.listdir(gt_folder):
     with open(os.path.join(est_folder, eachfile, 'eva.log'), 'w') as f:
         for idx in range(gt_pairs.shape[0]):
             f.write('\t'.join(map(str, gt_pairs[idx])) + '\n')
-            f.write(f'recall: {recall[idx]:.4f} \n')
+            # f.write(f'recall: {recall[idx]:.4f} \n')
             f.write(f'RE: {re[idx].item():.4f} \t')
             f.write(f'TE: {te[idx].item():.4f} \n')
             f.write(f'{inliers[x-gt_pairs.shape[0]+idx]} \n')
 
     # 每个场景 优/差 占比
-    recall_good = 0
-    recall_bad = 0
+    rmse_good = 0
+    rmse_bad = 0
     inliear_good = 0
     inliear_bad = 0
     for i in range(gt_pairs.shape[0]):
-        if recall[i]<0.2:
-            recall_good += 1
-        elif recall[i]>2:
-            recall_bad += 1
+        if rmse[i]<0.1:
+            rmse_good += 1
+        elif rmse[i]>0.8:
+            rmse_bad += 1
         if inlier_ratio[x-i-1] > 0.4:   # 100
             inliear_good += 1
         elif inlier_ratio[x-i-1] < 0.08:   # 20
             inliear_bad += 1
-    print(f'recall_good_ratio: {recall_good/gt_pairs.shape[0]:.3f}')
-    print(f'recall_bad_ratio: {recall_bad/gt_pairs.shape[0]:.3f}')
+    print(f'rmse_good_ratio: {rmse_good/gt_pairs.shape[0]:.3f}')
+    print(f'rmse_bad_ratio: {rmse_bad/gt_pairs.shape[0]:.3f}')
     print(f'inliear_good_ratio: {inliear_good / gt_pairs.shape[0]:.3f}')
     print(f'inliear_bad_ratio: {inliear_bad / gt_pairs.shape[0]:.3f} \n')
 
