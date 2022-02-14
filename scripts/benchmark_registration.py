@@ -30,7 +30,7 @@ def run_benchmark(feats_scores, n_points, exp_dir, benchmark, ransac_type='corre
     '''
     gt_folder = f'E:/wenxian/code/Pytorch/Coarse-to-fine-correspondences/configs/benchmarks/{benchmark}'
 
-    exp_dir = os.path.join(exp_dir, benchmark, 'coarse')  # str(n_points)
+    exp_dir = os.path.join(exp_dir, benchmark, str(n_points))  # 'coarse'
     if not os.path.exists(exp_dir):
         os.makedirs(exp_dir)
 
@@ -144,10 +144,10 @@ def run_benchmark(feats_scores, n_points, exp_dir, benchmark, ransac_type='corre
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--source_path', default='E:/wenxian/code/Pytorch/Coarse-to-fine-correspondences/snapshot/tdmatch_enc_dec_test/coarse', type=str, help='path to precomputed matching scores')
+    parser.add_argument('--source_path', default='E:/wenxian/code/Pytorch/Coarse-to-fine-correspondences/snapshot/tdmatch_enc_dec_test/best_matching_recall', type=str, help='path to precomputed matching scores')
     parser.add_argument('--benchmark', default='3DLoMatch', type=str, help='Either of [3DMatch, 3DLoMatch]')
     parser.add_argument('--n_points', default=250, type=int, help='number of points used by RANSAC')
-    parser.add_argument('--exp_dir', default='E:/wenxian/code/Pytorch/Coarse-to-fine-correspondences/est_traj', type=str, help='export final results')
+    parser.add_argument('--exp_dir', default='E:/wenxian/code/Pytorch/Coarse-to-fine-correspondences/est_traj_best_recall', type=str, help='export final results')
     args = parser.parse_args()
 
     feats_scores = sorted(glob.glob(f'{args.source_path}/*.pth'), key=natural_key)

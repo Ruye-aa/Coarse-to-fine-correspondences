@@ -80,7 +80,6 @@ def computeTransformationErr(trans, info):
 
     return p.item()
 
-
 def translation_error(t1, t2):
     return torch.norm(t1 - t2, dim=(1, 2))
 
@@ -148,7 +147,7 @@ def evaluate_registration_recall(num_fragment, result, result_pairs, gt_pairs, g
 npoint = 250
 benchmark = '3DLoMatch'
 gt_folder = f'configs/benchmarks/{benchmark}'
-est_folder = f'est_traj/{benchmark}/coarse'  #*************
+est_folder = f'est_traj_best_recall/{benchmark}/{npoint}'  #*************
 x = 0
 
 # 提取内点率数据
@@ -247,7 +246,7 @@ for eachfile in os.listdir(gt_folder):
             rmse_bad += 1
         if inlier_ratio[x-i-1] > 0.4:   # 100
             inliear_good += 1
-        elif inlier_ratio[x-i-1] < 0.08:   # 20
+        elif inlier_ratio[x-i-1] < 0.02:   # 0.08  20
             inliear_bad += 1
     print(f'rmse_good_ratio: {rmse_good/gt_pairs.shape[0]:.3f}')
     print(f'rmse_bad_ratio: {rmse_bad/gt_pairs.shape[0]:.3f}')

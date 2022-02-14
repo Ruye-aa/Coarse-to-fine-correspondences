@@ -60,7 +60,8 @@ benchmark = '3DLoMatch'
 npoint = 250     # ----------------------
 data_folder = f'E:/wenxian/code/Pytorch/Coarse-to-fine-correspondences/scripts/data/indoor/test'
 gt_folder = f'E:/wenxian/code/Pytorch/Coarse-to-fine-correspondences/configs/benchmarks/{benchmark}'
-est_folder = f'E:/wenxian/code/Pytorch/Coarse-to-fine-correspondences/est_traj/{benchmark}/{npoint}'    # ***************
+eva_folder = f'E:/wenxian/code/Pytorch/Coarse-to-fine-correspondences/est_traj/{benchmark}/{npoint}'
+est_folder = f'E:/wenxian/code/Pytorch/Coarse-to-fine-correspondences/est_traj/{benchmark}/coarse'    # {npoint}***************
 inliers_eva = f'{est_folder}/inliers_eva'
 x = 0
 
@@ -81,15 +82,17 @@ for each_scene in os.listdir(data_folder):
 
     # 获取配准帧的索引序号
     best_idx, worst_idx = [], []
-    with open(f'{est_folder}/{each_scene}/best.log') as f:
+    # with open(f'{est_folder}/{each_scene}/best.log') as f:
+    with open(f'{eva_folder}/{each_scene}/best.log') as f:       # eva_folder
         for eachline in f:
             tmp = eachline.split()
             best_idx.append(int(tmp[0]))   # str
-    with open(f'{est_folder}/{each_scene}/worst.log') as f:
+    # with open(f'{est_folder}/{each_scene}/worst.log') as f:
+    with open(f'{eva_folder}/{each_scene}/worst.log') as f:
         for eachline in f:
             tmp = eachline.split()
             worst_idx.append(int(tmp[0]))
-    for i in worst_idx:
+    for i in best_idx:
         tgt_idx = gt_pairs[i][0]
         src_idx = gt_pairs[i][1]
         # 从gt和est中获取对应帧的转换矩阵
@@ -122,6 +125,7 @@ for each_scene in os.listdir(data_folder):
         # inliers_num = get_inlier_num(torch.from_numpy(tgt_keys), torch.from_numpy(src_keys), torch.from_numpy(est_traj_ext))
         src_keys = to_o3d_pcd(src_keys)
         tgt_keys = to_o3d_pcd(tgt_keys)
+        npoint = len(src_keys_idx)
         # src关键点和所有点的转换
         src_pcd = to_o3d_pcd(src_pcd)
         tgt_pcd = to_o3d_pcd(tgt_pcd)
@@ -141,14 +145,15 @@ for each_scene in os.listdir(data_folder):
         gt_keys = tgt_keys + src_keys_gt
         corr_gt_keys = np.asarray(gt_keys.points)
 
-
         in_colors = [[0, 1, 0] for j in range(inlier_num[i])]
         out_colors = [[1, 0, 0] for j in range(npoint-inlier_num[i])]
 
-
-
-        in_lines = [[j, j+npoint] for j in in_keys_idx[:inlier_num[i]]]
-        out_lines = [[j, j+npoint] for j in in_keys_idx[inlier_num[i]:]]
+        if inlier_num[i] > 0:
+            in_lines = [[j, j + npoint] for j in in_keys_idx[:inlier_num[i]]]
+            out_lines = [[j, j + npoint] for j in in_keys_idx[inlier_num[i]:]]
+        else:
+            in_lines = [[j, j] for j in in_keys_idx[inlier_num[i]:]]
+            out_lines = [[j, j + npoint] for j in in_keys_idx[inlier_num[i]:]]
 
         in_line_set = o3d.geometry.LineSet(
             points=o3d.utility.Vector3dVector(corr_keys),

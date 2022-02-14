@@ -118,6 +118,15 @@ class RoughMatchingModel(nn.Module):
 
         scores = log_optimal_transport(scores, None, None, self.bin_score, iters=self.sinkhorn_iters)
 
+
+
+
+
+
+
+
+
+
         #########################################
         # 4. Decoder part
         decoder_input_feats = torch.cat([src_feats_c, tgt_feats_c], dim=-1)
